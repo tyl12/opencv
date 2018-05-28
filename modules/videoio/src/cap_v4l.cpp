@@ -243,7 +243,7 @@ make & enjoy!
 #define DEFAULT_V4L_FPS 30
 
 #define CHANNEL_NUMBER 1
-#define MAX_CAMERAS 8
+#define MAX_CAMERAS 24
 
 
 // default and maximum number of V4L buffers, not including last, 'special' buffer
