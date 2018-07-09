@@ -41,6 +41,7 @@
 
 #include "precomp.hpp"
 #include "grfmt_jpeg.hpp"
+#include "jerror.h"
 
 #ifdef HAVE_JPEG
 
@@ -160,6 +161,37 @@ error_exit( j_common_ptr cinfo )
     longjmp( err_mgr->setjmp_buffer, 1 );
 }
 
+METHODDEF(void)
+my_emit_message (j_common_ptr cinfo, int msg_level)
+{
+//    printf("->%s\n",__FUNCTION__);
+  struct jpeg_error_mgr * err = cinfo->err; //##@@##
+
+  if (msg_level < 0) {
+    /* It's a warning message.  Since corrupt files may generate many warnings,
+     * the policy implemented here is to show only the first warning,
+     * unless trace_level >= 3.
+     */
+    if (err->num_warnings == 0 || err->trace_level >= 3)
+      (*err->output_message) (cinfo);
+    /* Always count warnings in num_warnings. */
+    err->num_warnings++;
+#if 1
+        if ((cinfo)->err->msg_code == /*J_MESSAGE_CODE::*/JWRN_HIT_MARKER){
+            printf("-> %s: catch!! return control back\n", __FUNCTION__);
+            /* Return control to the setjmp point */
+            JpegErrorMgr* err_mgr = (JpegErrorMgr*)(cinfo->err);
+            longjmp( err_mgr->setjmp_buffer, 1 );
+        }
+#endif
+  } else {
+    /* It's a trace message.  Show it if trace_level >= msg_level. */
+    if (err->trace_level >= msg_level)
+      (*err->output_message) (cinfo);
+  }
+}
+
+
 
 /////////////////////// JpegDecoder ///////////////////
 
@@ -213,6 +245,7 @@ bool  JpegDecoder::readHeader()
     m_state = state;
     state->cinfo.err = jpeg_std_error(&state->jerr.pub);
     state->jerr.pub.error_exit = error_exit;
+    state->jerr.pub.emit_message = my_emit_message;
 
     if( setjmp( state->jerr.setjmp_buffer ) == 0 )
     {
@@ -249,6 +282,8 @@ bool  JpegDecoder::readHeader()
     if( !result )
         close();
 
+    if (!result)
+        printf("-> %s: return false\n", __FUNCTION__);
     return result;
 }
 
