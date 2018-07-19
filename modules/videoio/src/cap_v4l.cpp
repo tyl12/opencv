@@ -277,6 +277,7 @@ struct CvCaptureCAM_V4L CV_FINAL : public CvCapture
 
     __u32 palette;
     int width, height;
+    int width_set, height_set;
     int bufferSize;
     __u32 fps;
     bool convert_rgb;
@@ -792,6 +793,7 @@ bool CvCaptureCAM_V4L::open(const char* _deviceName)
 #ifndef NDEBUG
     fprintf(stderr, "(DEBUG) V4L: opening %s\n", _deviceName);
 #endif
+    width_set = height_set  = 0;
     FirstCapture = 1;
     width = DEFAULT_V4L_WIDTH;
     height = DEFAULT_V4L_HEIGHT;
@@ -1748,7 +1750,6 @@ static bool icvSetControl (CvCaptureCAM_V4L* capture,
 
 static int icvSetPropertyCAM_V4L( CvCaptureCAM_V4L* capture,
         int property_id, double value ){
-    static int width = 0, height = 0;
     bool retval = false;
     bool possible;
 
@@ -1757,6 +1758,9 @@ static int icvSetPropertyCAM_V4L( CvCaptureCAM_V4L* capture,
 
     switch (property_id) {
     case CV_CAP_PROP_FRAME_WIDTH:
+    {
+        int& width = capture->width_set;
+        int& height = capture->height_set;
         width = cvRound(value);
         retval = width != 0;
         if(width !=0 && height != 0) {
@@ -1765,8 +1769,12 @@ static int icvSetPropertyCAM_V4L( CvCaptureCAM_V4L* capture,
             retval = v4l2_reset(capture);
             width = height = 0;
         }
-        break;
+    }
+    break;
     case CV_CAP_PROP_FRAME_HEIGHT:
+    {
+        int& width = capture->width_set;
+        int& height = capture->height_set;
         height = cvRound(value);
         retval = height != 0;
         if(width !=0 && height != 0) {
@@ -1775,7 +1783,8 @@ static int icvSetPropertyCAM_V4L( CvCaptureCAM_V4L* capture,
             retval = v4l2_reset(capture);
             width = height = 0;
         }
-        break;
+    }
+    break;
     case CV_CAP_PROP_FPS:
         capture->fps = value;
         retval = v4l2_reset(capture);
