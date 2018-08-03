@@ -12,9 +12,10 @@ mkdir -p $INSTALL_PATH
 cd $BUILD_PATH
 
 #cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$INSTALL_PATH  -D WITH_XINE=ON -D WITH_OPENGL=ON -D WITH_TBB=ON ..
-cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$INSTALL_PATH   $ORIG_PATH
-make -j4
-make install
+cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$INSTALL_PATH  -D WITH_JPEG=ON -D BUILD_JPEG=ON $ORIG_PATH  || exit 1
+
+make -j4 || exit 1
+make install || exit 1
 git log -n 1 > $INSTALL_PATH/version
 
 find $INSTALL_PATH -name "opencv.pc"
@@ -24,4 +25,7 @@ find $INSTALL_PATH -name opencv.pc -exec grep "prefix=" {} \;
 
 cd $ORIG_PATH
 cp build.sh $INSTALL_PATH/
+
+cd $BUILD_PATH  && rm -rf opencv-3.4.0.tgz  && tar czf opencv-3.4.0.tgz opencv-3.4.0
+cd -
 
